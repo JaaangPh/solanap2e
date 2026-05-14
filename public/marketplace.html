@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOL Clash — Marketplace</title>
+  <link rel="icon" type="image/png" href="images/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <script src="https://unpkg.com/@solana/web3.js@1.37.2/lib/index.iife.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/custom-alert.css">
+  <script src="/custom-alert.js"></script>
+</head>
+
+<body class="marketplace-page new-layout">
+
+  <!-- LOADING -->
+  <div id="loading" class="loading" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;">
+    <div class="spinner"></div>
+    <p style="font-family:'Orbitron',monospace;font-size:12px;letter-spacing:0.15em;color:var(--muted);">SYNCING
+      WALLET...</p>
+  </div>
+
+  <div id="content" class="app-layout">
+
+    <!-- SIDEBAR -->
+    <div id="sidebar-root"></div>
+    <script src="sidebar.js"></script>
+    <script>document.getElementById('sidebar-root').innerHTML = getSidebarHTML('marketplace');</script>
+
+
+    <!-- MAIN AREA -->
+    <main class="main-area">
+      <header class="top-header">
+        <div class="header-title">
+          <span class="title-my">MY</span>
+          <span class="title-dashboard">MARKETPLACE</span>
+        </div>
+        <div class="header-actions">
+          <img src="images/logo.png" alt="Logo" class="header-logo" />
+          <button class="btn-icon">🔔</button>
+        </div>
+      </header>
+      <div class="main-content-scroll">
+        <div class="marketplace-container">
+
+          <!-- PICKS SECTION -->
+          <section class="marketplace-section">
+            <div class="section-header">
+              <h2 class="section-title">⚡ PICKS</h2>
+              <span class="section-subtitle">Choose your lucky pick</span>
+            </div>
+            <div class="picks-grid">
+              <!-- Rock Pick -->
+              <div class="pick-card">
+                <div class="pick-card-image">
+                  <img src="images/select/rock-select.png" alt="Rock Pick" class="pick-image" />
+                </div>
+                <div class="pick-card-header">
+                  <div class="pick-rarity">COMMON</div>
+                </div>
+                <div class="pick-card-body">
+                  <h3 class="pick-name">ROCK</h3>
+                  <p class="pick-description">Solid and reliable. Never breaks under pressure.</p>
+                </div>
+                <div class="pick-card-footer">
+                  <div class="pick-price">
+                    <span class="price-label">Price:</span>
+                    <span class="price-value">0.3 SOL</span>
+                  </div>
+                  <button class="btn-buy" onclick="buyPick('rock', 0.3)">BUY</button>
+                </div>
+              </div>
+
+              <!-- Paper Pick -->
+              <div class="pick-card">
+                <div class="pick-card-image">
+                  <img src="images/select/paper-select.png" alt="Paper Pick" class="pick-image" />
+                </div>
+                <div class="pick-card-header">
+                  <div class="pick-rarity">COMMON</div>
+                </div>
+                <div class="pick-card-body">
+                  <h3 class="pick-name">PAPER</h3>
+                  <p class="pick-description">Smooth and strategic. Covers everything.</p>
+                </div>
+                <div class="pick-card-footer">
+                  <div class="pick-price">
+                    <span class="price-label">Price:</span>
+                    <span class="price-value">0.3 SOL</span>
+                  </div>
+                  <button class="btn-buy" onclick="buyPick('paper', 0.3)">BUY</button>
+                </div>
+              </div>
+
+              <!-- Scissors Pick -->
+              <div class="pick-card">
+                <div class="pick-card-image">
+                  <img src="images/select/scissors-select.png" alt="Scissors Pick" class="pick-image" />
+                </div>
+                <div class="pick-card-header">
+                  <div class="pick-rarity">COMMON</div>
+                </div>
+                <div class="pick-card-body">
+                  <h3 class="pick-name">SCISSORS</h3>
+                  <p class="pick-description">Sharp and precise. Cuts through opposition.</p>
+                </div>
+                <div class="pick-card-footer">
+                  <div class="pick-price">
+                    <span class="price-label">Price:</span>
+                    <span class="price-value">0.3 SOL</span>
+                  </div>
+                  <button class="btn-buy" onclick="buyPick('scissors', 0.3)">BUY</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- BATTLEPASS SECTION -->
+          <section class="marketplace-section">
+            <div class="section-header">
+              <h2 class="section-title">🎖️ BATTLEPASS</h2>
+              <span class="section-subtitle">Unlock exclusive rewards</span>
+            </div>
+            <div class="battlepass-container">
+              <div class="coming-soon">
+                <div class="coming-soon-icon">⏰</div>
+                <h3>Coming Soon</h3>
+                <p>Battlepass rewards are loading... Stay tuned!</p>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

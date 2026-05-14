@@ -1,0 +1,151 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel</title>
+  <link rel="icon" type="image/png" href="images/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/index.min.js" integrity="sha512-5P+Tzy8cg6KLCErS2LPhsV6y+roKlK9nF8Wb1WBm10liKWiBkB7dgIlzqcnKqz4PVNwBuQZy0rVj2xcv3vG/7eg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="/custom-alert.css">
+  <script src="/custom-alert.js"></script>
+</head>
+<body class="dashboard-page new-layout">
+  <div id="loading" class="loading-screen">
+    <div class="loading-box">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <span>Loading admin panel...</span>
+    </div>
+  </div>
+
+  <div id="content" class="app-layout" style="display:none;">
+    <div id="sidebar-root"></div>
+    <main class="main-area">
+      <header class="top-header">
+        <div>
+          <h1>Admin Dashboard</h1>
+          <p class="subtitle">Give users picks and manage access with a dashboard-style interface.</p>
+        </div>
+      </header>
+      <div class="main-content-scroll">
+      <section class="page-section">
+        <div class="grid-2-columns">
+          <div class="card card-highlight">
+            <h2>Admin Quick Actions</h2>
+            <p>Grant picks and manage users from a layout that matches the dashboard experience.</p>
+          </div>
+          <div class="card card-info">
+            <h3>Access</h3>
+            <p>Only <strong>ghostnetwork30@gmail.com</strong> can access this page.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="card">
+          <h2>Grant Picks</h2>
+          <form id="admin-give-picks-form" class="admin-form">
+            <label for="admin-email">User Gmail</label>
+            <input id="admin-email" type="email" placeholder="email@example.com" required />
+
+            <label for="admin-picks">Pick Type</label>
+            <select id="admin-picks" required>
+              <option value="">Select pick type</option>
+              <option value="rock">Rock</option>
+              <option value="paper">Paper</option>
+              <option value="scissors">Scissors</option>
+            </select>
+
+            <div class="form-row">
+              <button type="submit" class="btn btn-primary">Give Pick</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="card">
+          <h2>Recent Users</h2>
+          <div id="admin-users-list" class="admin-users-list"></div>
+        </div>
+      </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="sidebar.js"></script>
+  <script>
+    window.activePage = 'admin';
+  </script>
+  <script src="app.js"></script>
+  <script>
+    async function renderAdminPanel() {
+      document.getElementById('content').style.display = 'flex';
+      document.getElementById('loading').style.display = 'none';
+
+      const usersList = document.getElementById('admin-users-list');
+      const adminEmail = document.getElementById('admin-email');
+      const picksSelect = document.getElementById('admin-picks');
+
+      async function loadUsers() {
+        try {
+          const res = await fetch('/api/admin/users');
+          const data = await res.json();
+          usersList.innerHTML = data.users.map(user => {
+            const pickCount = user.picks ? Object.keys(user.picks).length : 0;
+            return `
+            <div class="user-row">
+              <div>
+                <strong>${user.email}</strong>
+                <div class="user-meta">${pickCount} picks</div>
+              </div>
+              <div>${user.isAdmin ? 'Admin' : 'User'}</div>
+            </div>
+          `;
+          }).join('');
+        } catch (error) {
+          console.error('Failed to load users:', error);
+          usersList.innerHTML = '<p class="text-error">Unable to load users.</p>';
+        }
+      }
+
+      document.getElementById('admin-give-picks-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const email = adminEmail.value.trim();
+        const pickType = picksSelect.value;
+        if (!email || !pickType) return;
+
+        try {
+          const response = await fetch('/api/admin/give-picks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, picks: [pickType] })
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Failed to update user');
+          alert('✅ Picks assigned successfully');
+          adminEmail.value = '';
+          picksSelect.value = '';
+          await loadUsers();
+        } catch (error) {
+          console.error(error);
+          alert('❌ ' + error.message);
+        }
+      });
+
+      await loadUsers();
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initApp();
+      await renderAdminPanel();
+    });
+  </script>
+</body>
+</html>

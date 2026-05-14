@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOL Clash — Security</title>
+  <link rel="icon" type="image/png" href="images/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <script src="https://unpkg.com/@solana/web3.js@1.37.2/lib/index.iife.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/custom-alert.css">
+  <script src="/custom-alert.js"></script>
+</head>
+
+<body class="security-page new-layout">
+  <div id="loading" class="loading"
+    style="position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;">
+    <div class="spinner"></div>
+    <p style="font-family:'Orbitron',monospace;font-size:12px;letter-spacing:0.15em;color:var(--muted);">SYNCING
+      WALLET...</p>
+  </div>
+
+  <div id="content" class="app-layout" style="display:none">
+    <div id="sidebar-root"></div>
+    <script src="sidebar.js"></script>
+    <script>window.activePage = 'security'; document.getElementById('sidebar-root').innerHTML = getSidebarHTML('security');</script>
+    <main class="main-area">
+      <header class="top-header">
+        <div class="header-title">
+          <span class="title-my">SECURE</span>
+          <span class="title-dashboard">PIN</span>
+        </div>
+        <div class="header-actions">
+          <img src="images/logo.png" alt="Logo" class="header-logo" />
+          <button class="btn-icon">🔔</button>
+        </div>
+      </header>
+      <div class="main-content-scroll">
+        <div class="security-panel">
+          <div class="security-card">
+            <div class="security-icon">🔒</div>
+            <h1>Secure PIN Verification</h1>
+            <p>Enter your 6-digit security code to unlock your wallet secrets.</p>
+            <div id="security-status-text" class="pin-meta"></div>
+
+            <div id="security-setup-card" class="setup-card">
+              <div class="field-row">
+                <label for="security-code">Enter 6-digit code</label>
+                <input id="security-code" maxlength="6" inputmode="numeric" pattern="\d*" placeholder="••••••" />
+              </div>
+              <div class="field-row">
+                <label for="security-confirm">Confirm code</label>
+                <input id="security-confirm" maxlength="6" inputmode="numeric" pattern="\d*" placeholder="••••••" />
+              </div>
+              <button class="btn-action" onclick="setSecurityCode()">Set PIN</button>
+            </div>
+
+            <div id="security-verify-card" class="verify-card">
+              <div class="pin-grid" id="pin-grid">
+                <input type="password" maxlength="1" class="pin-input" />
+                <input type="password" maxlength="1" class="pin-input" />
+                <input type="password" maxlength="1" class="pin-input" />
+                <input type="password" maxlength="1" class="pin-input" />
+                <input type="password" maxlength="1" class="pin-input" />
+                <input type="password" maxlength="1" class="pin-input" />
+              </div>
+              <div class="pin-meta">
+                <button id="show-pin-toggle" class="text-button" type="button" onclick="toggleShowPin()">Show
+                  PIN</button>
+              </div>
+              <div id="pin-alert" class="alert-box" hidden>Incorrect PIN. Please try again.</div>
+              <div class="pin-actions">
+                <button class="btn-action btn-secondary" type="button" onclick="clearPin()">Clear</button>
+                <button class="btn-action" type="button" onclick="unlockSecurity()">Verify</button>
+              </div>
+            </div>
+
+            <div class="biometric-row">
+              <div class="biometric-icon">🛡️</div>
+              <div>Or verify using biometrics</div>
+            </div>
+
+            <div id="security-secret-panel" class="secret-panel" hidden>
+              <h2>Wallet Secrets</h2>
+              <div id="seed-grid" class="seed-grid"></div>
+              <div class="key-box" style="margin-top:18px;">
+                <span class="key-text" id="secure-private-key">—</span>
+              </div>
+              <div class="pin-actions" style="justify-content:flex-start; margin-top:18px;">
+                <button id="copy-seed-btn" class="copy-btn" onclick="copySeed()" title="Copy seed phrase"
+                  style="display:none;">Copy seed phrase</button>
+                <button id="copy-key-btn" class="copy-btn" onclick="copyPrivateKey()" title="Copy private key"
+                  style="display:none;">Copy private key</button>
+              </div>
+              <div id="seed-toast" class="copy-toast" style="margin-top:12px;">Seed phrase copied!</div>
+              <div id="key-toast" class="copy-toast" style="margin-top:12px;">Private key copied!</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

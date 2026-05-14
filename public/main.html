@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOL Clash — Command Center</title>
+  <link rel="icon" type="image/png" href="images/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <script src="https://unpkg.com/@solana/web3.js@1.37.2/lib/index.iife.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/custom-alert.css">
+  <script src="/custom-alert.js"></script>
+</head>
+
+<body class="dashboard-page new-layout">
+
+  <!-- LOADING -->
+  <div id="loading" class="loading" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;">
+    <div class="spinner"></div>
+    <p style="font-family:'Orbitron',monospace;font-size:12px;letter-spacing:0.15em;color:var(--muted);">SYNCING
+      WALLET...</p>
+  </div>
+
+  <div id="content" class="app-layout" style="display:none">
+
+    <!-- SIDEBAR -->
+    <div id="sidebar-root"></div>
+
+    <!-- MAIN AREA -->
+    <main class="main-area" id="main-area">
+      <!-- Content will be loaded here -->
+    </main>
+
+  </div>
+
+  <script src="sidebar.js"></script>
+  <script src="app.js"></script>
+  <script src="router.js"></script>
+  <script>
+    if (typeof startApp === 'function' && !window.appInitialized) {
+      window.appInitialized = true;
+      startApp();
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOL Clash — Profile</title>
+  <link rel="icon" type="image/png" href="images/favicon.ico">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <script src="https://unpkg.com/@solana/web3.js@1.37.2/lib/index.iife.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/custom-alert.css">
+  <script src="/custom-alert.js"></script>
+</head>
+
+<body class="profile-page new-layout">
+
+  <!-- LOADING -->
+  <div id="loading" class="loading" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;">
+    <div class="spinner"></div>
+    <p style="font-family:'Orbitron',monospace;font-size:12px;letter-spacing:0.15em;color:var(--muted);">SYNCING
+      WALLET...</p>
+  </div>
+
+  <div id="content" class="app-layout">
+
+    <!-- SIDEBAR -->
+    <div id="sidebar-root"></div>
+    <script src="sidebar.js"></script>
+    <script>document.getElementById('sidebar-root').innerHTML = getSidebarHTML('profile');</script>
+
+
+    <!-- MAIN AREA -->
+    <main class="main-area">
+      <header class="top-header">
+        <div class="header-title">
+          <span class="title-my">MY</span>
+          <span class="title-dashboard">👤 PROFILE</span>
+        </div>
+        <div class="header-actions">
+          <img src="images/logo.png" alt="Logo" class="header-logo" />
+          <button class="btn-icon">🔔</button>
+        </div>
+      </header>
+      <div class="main-content-scroll">
+        <div style="padding: 20px; text-align: center;">
+          <h2>Profile Page</h2>
+          <p>Coming soon...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

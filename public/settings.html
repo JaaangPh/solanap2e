@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOL Clash — Settings</title>
+  <link rel="icon" type="image/png" href="images/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <script src="https://unpkg.com/@solana/web3.js@1.37.2/lib/index.iife.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/custom-alert.css">
+  <script src="/custom-alert.js"></script>
+</head>
+
+<body class="settings-page new-layout">
+
+  <div id="loading" class="loading"
+    style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+    <div class="spinner"></div>
+    <p style="font-family:'Orbitron',monospace;font-size:12px;letter-spacing:0.15em;color:var(--muted);">SYNCING
+      WALLET...</p>
+  </div>
+
+  <div id="content" class="app-layout" style="display:none">
+    <div id="sidebar-root"></div>
+    <script src="sidebar.js"></script>
+    <script>window.activePage = 'settings'; document.getElementById('sidebar-root').innerHTML = getSidebarHTML('settings');</script>
+
+    <main class="main-area">
+      <header class="top-header">
+        <div class="header-title">
+          <span class="title-my">APP</span>
+          <span class="title-dashboard">⚙ SETTINGS</span>
+        </div>
+        <div class="header-actions">
+          <img src="images/logo.png" alt="Logo" class="header-logo" />
+          <button class="btn-icon">🔔</button>
+        </div>
+      </header>
+
+      <div class="main-content-scroll">
+        <div style="padding: 20px;">
+          <div
+            style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:16px; align-items:center; margin-bottom:22px;">
+            <div>
+              <h2 style="margin:0;">⚙ Settings</h2>
+              <p style="margin:8px 0 0; color:var(--muted); max-width:640px; line-height:1.6;">Manage your app
+                experience, notifications, and privacy preferences here. Security remains available separately in the
+                Security section.</p>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="settings-card">
+              <h3>Display</h3>
+              <p>Adjust theme, layout, and wallet display settings for a comfortable view.</p>
+            </div>
+            <div class="settings-card">
+              <h3>Notifications</h3>
+              <p>Enable alerts for wallet activity, game updates, and account events.</p>
+            </div>
+            <div class="settings-card">
+              <h3>Privacy</h3>
+              <p>Control how your account information is handled and what sessions remain active.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

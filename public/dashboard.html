@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solana Wallet — Dashboard</title>
+  <link rel="icon" type="image/png" href="images/favicon.ico">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    // Buffer polyfill for browser
+    (function () {
+      var g = typeof globalThis !== 'undefined' ? globalThis :
+        typeof window !== 'undefined' ? window :
+          typeof global !== 'undefined' ? global : this;
+
+      if (g.Buffer) return;
+
+      function Buffer(data, encoding) {
+        if (!(this instanceof Buffer)) return new Buffer(data, encoding);
+
+        var bytes;
+        if (typeof data === 'string') {
+          if (encoding === 'hex') {
+            bytes = new Uint8Array(data.length / 2);
+            for (var i = 0; i < data.length; i += 2) {
+              bytes[i / 2] = parseInt(data.substr(i, 2), 16);
+            }
+          } else if (encoding === 'base64') {
+            var binary = atob(data);
+            bytes = new Uint8Array(binary.length);
+            for (var j = 0; j < binary.length; j++) {
+              bytes[j] = binary.charCodeAt(j);
+            }
+          } else {
+            bytes = new TextEncoder().encode(data);
+          }
+        } else if (data instanceof Uint8Array) {
+          bytes = new Uint8Array(data);
+        } else if (Array.isArray(data)) {
+          bytes = new Uint8Array(data);
+        } else if (typeof data === 'number') {
+          bytes = new Uint8Array(data);
+        } else {
+          bytes = new Uint8Array(0);
+        }
+
+        // Copy to instance
+        for (var k = 0; k < bytes.length; k++) {
+          this[k] = bytes[k];
+        }
+        this.length = bytes.length;
+        this.byteLength = bytes.length;
+
+        return this;
+      }
+
+      Buffer.prototype = Object.create(Uint8Array.prototype);
+      Buffer.prototype.constructor = Buffer;
+
+      Buffer.from = function (data, encoding) {
+        return new Buffer(data, encoding);
+      };
+
+      Buffer.alloc = function (size) {
+        return new Buffer(size);
+      };
+
+      Buffer.isBuffer = function (obj) {
+        return obj instanceof Buffer || obj instanceof Uint8Array;
+      };
+
+      Buffer.byteLength = function (str) {
+        return new TextEncoder().encode(str).length;
+      };
+
+      Buffer.concat = function (buffers) {
+        var total = buffers.reduce(function (sum, b) { return sum + b.length; }, 0);
+        var result = new Uint8Array(total);
+        var offset = 0;
+        for (var i = 0; i < buffers.length; i++) {
+          result.set(buffers[i], offset);
+          offset += buffers[i].length;
+        }
+        return Buffer.from(result);
+      };
+
+      g.Buffer = Buffer;
+    })();
+  </script>
+  <script src="https://unpkg.com/@solana/web3.js@1.37.2/lib/index.iife.js"></script>
+  <link rel="stylesheet" href="/custom-alert.css">
+  <script src="/custom-alert.js"></script>
+</head>
+
+<body class="dashboard-page new-layout">
+  <div id="loading" class="loading"
+    style="position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;">
+    <div class="spinner"></div>
+    <p style="font-family:'Orbitron',monospace;font-size:12px;letter-spacing:0.15em;color:var(--muted);">SYNCING
+      WALLET...</p>
+  </div>
+
+  <div id="content" class="app-layout" style="display:none">
+    <div id="sidebar-root"></div>
+    <script src="sidebar.js"></script>
+    <script>window.activePage = 'dashboard';</script>
+
+    <main class="main-area">
+      <header class="top-header">
+        <div class="header-title">
+          <span class="title-my">SOL</span>
+          <span class="title-dashboard">DASHBOARD</span>
+        </div>
+        <div class="header-actions">
+          <img src="images/logo.png" alt="Logo" class="header-logo" />
+          <button class="btn-icon">🔔</button>
+        </div>
+      </header>
+      <div class="main-content-scroll">
+        <!-- Wallet Card -->
+        <div class="wallet-hero">
+          <div class="hero-top">
+            <div class="network-badge" id="network-badge">mainnet-beta</div>
+            <div class="wallet-label">Your Solana Wallet</div>
+          </div>
+
+          <!-- Balance Display -->
+          <div style="margin-bottom:24px;">
+            <div
+              style="font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
+              Balance</div>
+            <div style="display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap;">
+              <div style="font-size:36px; font-weight:700; color:var(--text);" id="sol-balance">— SOL</div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <select id="currency-select"
+                  style="background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer;"
+                  onchange="changeCurrency()">
+                  <option value="usd">USD $</option>
+                  <option value="php">PHP ₱</option>
+                  <option value="krw">KRW ₩</option>
+                  <option value="jpy">JPY ¥</option>
+                  <option value="eur">EUR €</option>
+                  <option value="gbp">GBP £</option>
+                  <option value="cny">CNY ¥</option>
+                  <option value="inr">INR ₹</option>
+                  <option value="aud">AUD A$</option>
+                  <option value="cad">CAD C$</option>
+                </select>
+                <div style="font-size:20px; color:var(--green); font-weight:600;" id="fiat-balance">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wallet-address-row">
+            <div class="wallet-address-box">
+              <span class="wallet-address-text" id="dashboard-wallet-address">—</span>
+            </div>
+            <button class="btn-copy" type="button" onclick="copyAddress()" title="Copy wallet address">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+              </svg>
+              Copy
+            </button>
+          </div>
+          <div id="copy-toast" class="copy-toast">Address copied!</div>
+
+          <div class="wallet-actions">
+            <button class="btn-action" onclick="openExplorer()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              View on Explorer
+            </button>
+            <button class="btn-action btn-airdrop" id="airdrop-btn" onclick="requestAirdrop()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                <polyline points="17 6 23 6 23 12"></polyline>
+              </svg>
+              Request Airdrop (devnet)
+            </button>
+            <button class="btn-action" onclick="openDepositModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <line x1="12" y1="19" x2="12" y2="5"></line>
+                <polyline points="5 12 12 5 19 12"></polyline>
+              </svg>
+              Deposit
+            </button>
+            <a href="/arena" id="arena-launch-btn" class="btn-action btn-arena">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polygon points="10,8 16,12 10,16 10,8"></polygon>
+              </svg>
+              Enter Arena
+            </a>
+          </div>
+        </div>
+
+        <!-- My Picks Section -->
+        <div id="my-picks-section" style="margin-bottom:32px;">
+          <h2
+            style="font-family:'Orbitron',monospace; font-size:18px; font-weight:900; color:var(--text); margin-bottom:8px; letter-spacing:0.04em;">
+            ⚡ MY PICKS</h2>
+          <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">Manage your daily arena attempts</p>
+          <div id="picks-summary" class="picks-summary" style="display:none; margin-bottom:16px;"></div>
+          <div id="picks-container" class="picks-grid"
+            style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+            <!-- Picks will be populated here -->
+          </div>
+
+          <div id="no-picks-message"
+            style="text-align:center; padding:40px 20px; background:rgba(153,69,255,0.06); border:1px dashed rgba(153,69,255,0.3); border-radius:16px;">
+            <p style="font-size:14px; color:var(--muted); margin-bottom:12px;">You haven't purchased any picks yet.</p>
+            <a href="/marketplace"
+              style="display:inline-flex; align-items:center; gap:8px; padding:10px 20px; background:rgba(20,241,149,0.1); border:1px solid rgba(20,241,149,0.3); color:var(--green); border-radius:10px; text-decoration:none; font-weight:600; font-size:13px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Go to Marketplace
+            </a>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:24px">
+          <h3 style="margin-bottom:16px; font-size:16px;">🔐 Secrets are secured</h3>
+          <p style="color:var(--muted); font-size:13px; margin-bottom:12px;">Your seed phrase and private key are now
+            managed from the Security page for safer access.</p>
+          <a href="/security" class="btn-action" style="width:auto; padding:12px 20px;">Go to Security</a>
+          <div class="info-grid">
+            <div class="info-card">
+              <div class="info-card-icon">👤</div>
+              <div class="info-card-body">
+                <div class="info-card-label">Account</div>
+                <div class="info-card-value" id="user-email">—</div>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="info-card-icon">📅</div>
+              <div class="info-card-body">
+                <div class="info-card-label">Wallet Created</div>
+                <div class="info-card-value" id="wallet-created">—</div>
+              </div>
+            </div>
+            <div class="info-card">
+              <div class="info-card-icon">🌐</div>
+              <div class="info-card-body">
+                <div class="info-card-label">Network</div>
+                <div class="info-card-value" id="wallet-network">—</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Deposit Modal -->
+        <div id="deposit-modal" class="modal-overlay">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>Deposit SOL</h3>
+              <button class="modal-close" onclick="closeDepositModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <p style="color:var(--muted); font-size:13px; margin-bottom:16px;">Send SOL from your Phantom or Solflare
+                wallet to your site wallet.</p>
+              <div style="margin-bottom:16px;">
+                <label style="font-size:13px; color:var(--muted); display:block; margin-bottom:6px;">Amount
+                  (SOL)</label>
+                <input type="number" id="deposit-amount" placeholder="0.00" step="0.01" min="0"
+                  style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-size:14px;" />
+              </div>
+              <div class="wallet-address-box" style="margin-bottom:16px;">
+                <span class="wallet-address-text" style="font-size:11px;" id="deposit-address">—</span>
+                <button class="copy-btn" id="copy-deposit-btn" onclick="copyDepositAddress()" title="Copy address">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+              <button class="btn-action" style="width:100%; justify-content:center;" onclick="depositWithWallet()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+                Connect Wallet & Send
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

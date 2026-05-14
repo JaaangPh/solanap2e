@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Solana Wallet — Login</title>
+  <link rel="icon" type="image/png" href="images/favicon.ico">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/custom-alert.css">
+  <script src="/custom-alert.js"></script>
+</head>
+<body class="login-page">
+  <div class="bg-dots"></div>
+  <div class="login-wrapper">
+    <div class="login-card-panel">
+      <div class="login-header">
+        <span class="login-label">Login to</span>
+        <div class="brand-inline">
+          <img src="images/logo.png" alt="Solana logo" class="header-logo" />
+          <span>Sol Clash</span>
+        </div>
+      </div>
+
+      <div class="login-card">
+        <div class="login-panel">
+          <div class="login-copy">
+            <h1>Welcome to SOL Clash</h1>
+            <p>Login with your Google account to enter the arena.</p>
+          </div>
+
+          <div class="input-group">
+            <label>User Name</label>
+            <input type="text" placeholder="User Name" disabled />
+          </div>
+          <div class="input-group">
+            <label>Password</label>
+            <input type="password" placeholder="Password" disabled />
+          </div>
+
+          <div class="login-meta">
+            <label class="remember-row"><input type="checkbox" disabled /><span>Remember Me</span></label>
+            <a href="#">Forgot Password?</a>
+          </div>
+
+          <a href="/auth/google" class="btn-primary">Login to your Account</a>
+
+          <div class="social-bar">
+            <span>or Sign in with</span>
+            <div class="social-icons">
+              <a href="/auth/google" class="social-icon google" aria-label="Google">
+                <img src="images/google.jpg" alt="Google sign in" class="social-img" />
+              </a>
+              <button class="social-icon" disabled>f</button>
+              <button class="social-icon" disabled>t</button>
+              <button class="social-icon" disabled>in</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="login-footer">
+          Don’t have account? <a href="#">Register Now</a>
+        </div>
+        <div id="error-msg" class="error-msg" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="visual-panel">
+      <div class="visual-card visual-image-card">
+        <div class="visual-image-wrapper">
+          <img src="images/logo.png" alt="Solana logo" class="visual-image" />
+        </div>
+        <div class="visual-copy">
+          <h2>Welcome to SOL Clash</h2>
+          <p>Welcome to SOL Clash — the ultimate Solana-powered Rock Paper Scissors battle arena.</p>
+          <p>Built for speed, competition, and rewards, SOL Clash combines the timeless strategy game with the power of Web3 and play-to-earn mechanics. Players can challenge opponents in real-time matches, place wagers, earn crypto rewards, unlock achievements, and dominate seasonal leaderboards.</p>
+          <p>Powered by the Solana blockchain, SOL Clash delivers ultra-fast gameplay with low transaction fees, creating a seamless competitive experience for both casual players and hardcore grinders. Whether you’re battling for fun or climbing the ranks for rewards, every move matters.</p>
+          <p>Join the arena. Master the throw. Earn your victory.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error') === 'auth_failed') {
+      const el = document.getElementById('error-msg');
+      el.textContent = 'Authentication failed. Please try again.';
+      el.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOL Clash — Arena</title>
+  <link rel="icon" type="image/png" href="images/favicon.ico">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/custom-alert.css">
+  <script src="/custom-alert.js"></script>
+</head>
+<body class="arena-page new-layout">
+  <div id="loading" class="loading" style="position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px;">
+    <div class="spinner"></div>
+    <p style="font-family:'Orbitron',monospace;font-size:12px;letter-spacing:0.15em;color:var(--muted);">SYNCING WALLET...</p>
+  </div>
+
+  <div id="content" class="app-layout" style="display:none">
+    <div id="sidebar-root"></div>
+    <script src="sidebar.js"></script>
+    <script>window.activePage = 'arena';</script>
+
+    <main class="main-area">
+      <header class="top-header">
+        <div class="header-title">
+          <span class="title-my">SOL</span>
+          <span class="title-dashboard">CLASH</span>
+        </div>
+        <div class="header-actions">
+          <a href="/dashboard" class="btn-icon">Back</a>
+        </div>
+      </header>
+      <div class="main-content-scroll">
+        <div class="arena-hero">
+          <h1 class="arena-title">THE ARENA</h1>
+          <p class="arena-subtitle">Neon duels on Solana. Select your strike and watch the grid react.</p>
+        </div>
+
+        <div class="game-container">
+          <div class="game-board">
+            <div class="player-section">
+              <h3>You</h3>
+              <div class="choice-display" id="player-choice">
+                <img id="player-choice-image" src="images/left/rock-left.png" alt="Player choice" />
+                <span class="choice-label" id="player-choice-label">Rock</span>
+              </div>
+              <div class="score">Score: <span id="player-score">0</span></div>
+            </div>
+
+            <div class="vs-section">
+              <div class="round">Round <span id="round">1</span></div>
+              <div class="result" id="result">Booting deck... choose your move.</div>
+              <div class="reveal-timer" id="reveal-timer"></div>
+            </div>
+
+            <div class="opponent-section">
+              <h3>Opponent</h3>
+              <div class="choice-display" id="opponent-choice">
+                <img id="opponent-choice-image" src="images/right/rock-right.png" alt="Opponent choice" />
+                <span class="choice-label" id="opponent-choice-label">Rock</span>
+              </div>
+              <div class="score">Score: <span id="opponent-score">0</span></div>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button class="choice-btn" type="button" data-choice="rock">
+              <img src="images/select/rock-select.png" alt="Rock" class="emoji" />
+              Rock
+            </button>
+            <button class="choice-btn" type="button" data-choice="paper">
+              <img src="images/select/paper-select.png" alt="Paper" class="emoji" />
+              Paper
+            </button>
+            <button class="choice-btn" type="button" data-choice="scissors">
+              <img src="images/select/scissors-select.png" alt="Scissors" class="emoji" />
+              Scissors
+            </button>
+          </div>
+
+          <div class="game-stats">
+            <div class="stat">
+              <span class="stat-label">Wins</span>
+              <span class="stat-value" id="wins">0</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Losses</span>
+              <span class="stat-value" id="losses">0</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Draws</span>
+              <span class="stat-value" id="draws">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let playerScore = 0;
+    let opponentScore = 0;
+    let round = 1;
+    let wins = 0;
+    let losses = 0;
+    let draws = 0;
+
+    const choices = ['rock', 'paper', 'scissors'];
+    const choiceBtns = document.querySelectorAll('.choice-btn');
+    const playerChoiceImage = document.getElementById('player-choice-image');
+    const opponentChoiceImage = document.getElementById('opponent-choice-image');
+    const playerChoiceLabel = document.getElementById('player-choice-label');
+    const opponentChoiceLabel = document.getElementById('opponent-choice-label');
+    const resultEl = document.getElementById('result');
+    const revealTimerEl = document.getElementById('reveal-timer');
+    const roundEl = document.getElementById('round');
+    const playerScoreEl = document.getElementById('player-score');
+    const opponentScoreEl = document.getElementById('opponent-score');
+    const winsEl = document.getElementById('wins');
+    const lossesEl = document.getElementById('losses');
+    const drawsEl = document.getElementById('draws');
+
+    let revealInterval = null;
+    let pendingChoices = null;
+    let matchOver = false;
+    let currentMatchPickType = null;
+    let currentPickAttempts = {};
+    let totalRemainingAttempts = 0;
+    const winRateStats = { win: 45, draw: 20, lose: 35 };
+
+    async function refreshArenaPickData() {
+      try {
+        const res = await fetch('/api/my-picks');
+        const data = await res.json();
+        currentPickAttempts = {};
+        totalRemainingAttempts = 0;
+        if (data.picks && data.picks.length) {
+          data.picks.forEach(pick => {
+            currentPickAttempts[pick.type] = pick.attemptsRemaining;
+            totalRemainingAttempts += pick.attemptsRemaining;
+          });
+        }
+
+        const hasAttempts = totalRemainingAttempts > 0;
+        choiceBtns.forEach(button => {
+          button.disabled = !hasAttempts;
+        });
+
+        if (!hasAttempts) {
+          resultEl.textContent = '❌ No attempts left today. Purchase picks or wait for reset.';
+          window.location.href = '/dashboard?error=no_attempts';
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to refresh arena pick data:', error);
+      }
+    }
+
+    choiceBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (revealInterval || matchOver) return;
+      if (totalRemainingAttempts <= 0) {
+        alert('❌ No attempts left today. Purchase picks or wait for reset.');
+        return;
+      }
+
+      const playerChoice = btn.dataset.choice;
+      const remaining = currentPickAttempts[playerChoice];
+
+      if (remaining === undefined) {
+        alert('❌ You do not own that pick. Purchase it from the marketplace first.');
+        return;
+      }
+      if (remaining <= 0) {
+        alert(`❌ No attempts left for ${playerChoice.toUpperCase()}. Choose another pick or purchase more picks.`);
+        return;
+      }
+
+        currentMatchPickType = playerChoice;
+        const opponentChoice = choices[Math.floor(Math.random() * choices.length)];
+        pendingChoices = { playerChoice, opponentChoice };
+
+        choiceBtns.forEach(button => button.disabled = true);
+        playerChoiceImage.src = 'images/left/rock-left.png';
+        opponentChoiceImage.src = 'images/right/rock-right.png';
+        playerChoiceLabel.textContent = 'Rock';
+        opponentChoiceLabel.textContent = 'Rock';
+        playerChoiceImage.classList.add('shake-left');
+        opponentChoiceImage.classList.add('shake-right');
+        resultEl.textContent = 'Revealing in 10...';
+        revealTimerEl.textContent = '10s';
+
+        let remainingSeconds = 10;
+        revealInterval = setInterval(() => {
+          remainingSeconds -= 1;
+          revealTimerEl.textContent = `${remainingSeconds}s`;
+          resultEl.textContent = remainingSeconds > 0 ? `Revealing in ${remainingSeconds}...` : 'Revealing...';
+
+          if (remainingSeconds <= 0) {
+            clearInterval(revealInterval);
+            revealInterval = null;
+            revealTimerEl.textContent = '';
+            finalizeBattle();
+          }
+        }, 1000);
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', refreshArenaPickData);
+
+    const resetBtn = document.getElementById('reset-btn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', resetGame);
+    }
+
+    async function deductAttemptForMatch() {
+      if (!currentMatchPickType) return;
+
+      try {
+        const useRes = await fetch('/api/use-pick-attempt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pickType: currentMatchPickType })
+        });
+        const useData = await useRes.json();
+        if (!useRes.ok) {
+          throw new Error(useData.error || 'Unable to use attempt');
+        }
+        currentPickAttempts[currentMatchPickType] = useData.attemptsRemaining;
+        await refreshArenaPickData();
+      } catch (error) {
+        console.error('Arena attempt failed:', error);
+        alert('❌ ' + error.message);
+      }
+    }
+
+    function finalizeBattle() {
+      if (!pendingChoices || matchOver) return;
+
+      const { playerChoice, opponentChoice } = pendingChoices;
+      const result = getResult(playerChoice, opponentChoice);
+
+      playerChoiceImage.src = `images/left/${playerChoice}-left.png`;
+      opponentChoiceImage.src = `images/right/${opponentChoice}-right.png`;
+      playerChoiceLabel.textContent = capitalize(playerChoice);
+      opponentChoiceLabel.textContent = capitalize(opponentChoice);
+      playerChoiceImage.classList.remove('shake-left');
+      opponentChoiceImage.classList.remove('shake-right');
+      resultEl.textContent = result;
+
+      if (result === 'You Win!') {
+        playerScore++;
+        wins++;
+      } else if (result === 'You Lose!') {
+        opponentScore++;
+        losses++;
+      } else {
+        draws++;
+      }
+
+      playerScoreEl.textContent = playerScore;
+      opponentScoreEl.textContent = opponentScore;
+      winsEl.textContent = wins;
+      lossesEl.textContent = losses;
+      drawsEl.textContent = draws;
+
+      if (playerScore >= 3 || opponentScore >= 3 || draws >= 3) {
+        matchOver = true;
+        if (playerScore >= 3) {
+          resultEl.textContent = 'MATCH VICTORY!';
+        } else if (opponentScore >= 3) {
+          resultEl.textContent = 'MATCH DEFEAT!';
+        } else {
+          resultEl.textContent = 'MATCH DRAW!';
+        }
+        choiceBtns.forEach(button => button.disabled = true);
+        deductAttemptForMatch().finally(() => {
+          setTimeout(() => { window.location.href = '/dashboard'; }, 2000);
+        });
+      } else {
+        round++;
+        roundEl.textContent = round;
+        choiceBtns.forEach(button => button.disabled = false);
+      }
+
+      pendingChoices = null;
+    }
+
+    function resetGame() {
+      if (revealInterval) {
+        clearInterval(revealInterval);
+        revealInterval = null;
+      }
+
+      matchOver = false;
+      choiceBtns.forEach(button => button.disabled = false);
+      playerScore = 0;
+      opponentScore = 0;
+      round = 1;
+      wins = 0;
+      losses = 0;
+      draws = 0;
+      pendingChoices = null;
+
+      playerChoiceImage.src = 'images/left/rock-left.png';
+      opponentChoiceImage.src = 'images/right/rock-right.png';
+      playerChoiceLabel.textContent = 'Rock';
+      opponentChoiceLabel.textContent = 'Rock';
+      playerChoiceImage.classList.remove('shake-left');
+      opponentChoiceImage.classList.remove('shake-right');
+      resultEl.textContent = 'Booting deck... choose your move.';
+      revealTimerEl.textContent = '';
+      roundEl.textContent = round;
+      playerScoreEl.textContent = playerScore;
+      opponentScoreEl.textContent = opponentScore;
+      winsEl.textContent = wins;
+      lossesEl.textContent = losses;
+      drawsEl.textContent = draws;
+    }
+
+    function capitalize(value) {
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function getEmoji(choice) {
+      switch (choice) {
+        case 'rock': return '🪨';
+        case 'paper': return '📄';
+        case 'scissors': return '✂️';
+      }
+    }
+
+    function getResult(player, opponent) {
+      if (player === opponent) return 'Draw!';
+      if (
+        (player === 'rock' && opponent === 'scissors') ||
+        (player === 'paper' && opponent === 'rock') ||
+        (player === 'scissors' && opponent === 'paper')
+      ) {
+        return 'You Win!';
+      }
+      return 'You Lose!';
+    }
+  </script>
+
+  <div id="orientation-warning" class="orientation-warning" aria-live="polite">
+    <div class="warning-body">
+      <h2>Rotate to Landscape</h2>
+      <p>For the best experience in the Arena on mobile, please turn your device to landscape orientation.</p>
+      <p class="hint">If supported, your browser is requesting landscape orientation automatically.</p>
+    </div>
+  </div>
+
+  <script>
+    const arenaOrientationWarning = document.getElementById('orientation-warning');
+
+    function isMobileDevice() {
+      return Boolean(
+        navigator.userAgentData?.mobile ||
+        /Mobi|Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      );
+    }
+
+    function updateArenaOrientation() {
+      const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+      if (isMobileDevice() && isPortrait) {
+        document.body.classList.add('portrait-lock');
+        arenaOrientationWarning?.classList.add('active');
+      } else {
+        document.body.classList.remove('portrait-lock');
+        arenaOrientationWarning?.classList.remove('active');
+      }
+    }
+
+    async function lockArenaLandscape() {
+      if (!isMobileDevice() || !screen.orientation || !screen.orientation.lock) return;
+      try {
+        await screen.orientation.lock('landscape');
+      } catch (err) {
+        console.debug('Orientation lock not available:', err);
+      }
+    }
+
+    function initArenaOrientation() {
+      updateArenaOrientation();
+      lockArenaLandscape();
+      window.addEventListener('orientationchange', updateArenaOrientation);
+      window.addEventListener('resize', updateArenaOrientation);
+      if (screen.orientation && screen.orientation.addEventListener) {
+        screen.orientation.addEventListener('change', updateArenaOrientation);
+      }
+    }
+
+    window.addEventListener('load', initArenaOrientation);
+  </script>
+
+  <script src="app.js"></script>
+</body>
+</html>
