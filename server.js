@@ -578,17 +578,21 @@ app.get('/leaderboard', (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // â”€â”€â”€ Start â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-async function startServer() {
+async function initAppForServer() {
   try {
     await initDatabase();
   } catch (error) {
     console.error('Database initialization failed:', error.message);
   }
+}
 
+initAppForServer();
+
+if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`\nðŸš€ Server running at http://localhost:${PORT}`);
-    console.log(`ðŸ“¡ Solana network: ${process.env.SOLANA_NETWORK || 'mainnet-beta'}\n`);
+    console.log(`\n🚀 Server running at http://localhost:${PORT}`);
+    console.log(`📡 Solana network: ${process.env.SOLANA_NETWORK || 'mainnet-beta'}\n`);
   });
 }
 
-startServer();
+module.exports = app;
