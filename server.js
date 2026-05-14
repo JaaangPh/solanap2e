@@ -2,7 +2,6 @@ require('dotenv').config();
 const fs = require('fs');
 const express = require('express');
 const session = require('express-session');
-const FileStore = require('session-file-store')(session);
 const path = require('path');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
@@ -14,14 +13,18 @@ const { derivePath } = require('ed25519-hd-key');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const sessionDir = path.join(__dirname, 'sessions');
-if (!fs.existsSync(sessionDir)) {
-  fs.mkdirSync(sessionDir, { recursive: true });
-}
 
-// â”€â”€â”€ Session & Passport â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-app.use(session({
-  store: new FileStore({
+// Use FileStore for local development, memory store for Vercel
+let sessionStore;
+const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+
+if (!isProduction) {
+  const FileStore = require('session-file-store')(session);
+  const sessionDir = path.join(__dirname, 'sessions');
+  if (!fs.existsSync(sessionDir)) {
+    fs.mkdirSync(sessionDir, { recursive: true });
+  }
+  sessionStore = new FileStore({
     path: sessionDir,
     ttl: 604800,
     retries: 10,
@@ -32,11 +35,21 @@ app.use(session({
       return { cookie: {} };
     },
     logFn: function () {}
-  }),
+  });
+}
+
+// â”€â”€â”€ Session & Passport â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+app.use(session({
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || 'solana-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: { 
+    secure: isProduction,
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  }
 }));
 
 app.use(passport.initialize());
@@ -47,7 +60,8 @@ function getAuthCallbackURL(req) {
   if (process.env.GOOGLE_CALLBACK_URL && process.env.GOOGLE_CALLBACK_URL.trim()) {
     return process.env.GOOGLE_CALLBACK_URL.replace(/\/+$|\s+$/g, '');
   }
-  return `${req.protocol}://${req.get('host')}/auth/google/callback`;
+  const protocol = isProduction ? 'https' : req.protocol;
+  return `${protocol}://${req.get('host')}/auth/google/callback`;
 }
 
 // â”€â”€â”€ Passport Google OAuth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
