@@ -4,6 +4,8 @@ const crypto = require('crypto');
 require('dotenv').config();
 
 const DB_PATH = path.join(__dirname, 'users.json');
+const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+let memoryDB = { users: {} };
 
 // â"€â"€â"€ Encryption/Decryption for Sensitive Fields â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const ENCRYPTION_KEY = Buffer.from(process.env.ENCRYPTION_KEY || '4a7d9f2e1b8c5a3f6e0d4b7a9c2f5e8b1d4a7f0c3e6b9d2a5f8c1e4b7a0d3f69', 'hex');
@@ -33,18 +35,26 @@ function decrypt(encryptedData) {
 }
 
 function initDB() {
+  if (isProduction) return; // Skip file operations on Vercel
   if (!fs.existsSync(DB_PATH)) {
     fs.writeFileSync(DB_PATH, JSON.stringify({ users: {} }, null, 2));
   }
 }
 
 function readDB() {
+  if (isProduction) {
+    return memoryDB; // Use in-memory store on Vercel
+  }
   initDB();
   const data = fs.readFileSync(DB_PATH, 'utf8');
   return JSON.parse(data);
 }
 
 function writeDB(data) {
+  if (isProduction) {
+    memoryDB = data; // Store in memory on Vercel
+    return;
+  }
   fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 }
 

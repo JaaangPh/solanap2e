@@ -40,10 +40,10 @@ if (!isProduction) {
 
 // â”€â”€â”€ Session & Passport â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.use(session({
-  store: sessionStore,
   secret: process.env.SESSION_SECRET || 'solana-secret-key',
   resave: false,
   saveUninitialized: false,
+  ...(sessionStore && { store: sessionStore }),
   cookie: { 
     secure: isProduction,
     httpOnly: true,
