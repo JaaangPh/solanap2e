@@ -7,7 +7,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { Keypair, Connection, LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction } = require('@solana/web3.js');
 const bs58 = require('bs58');
-const { getUser, getAllUsers, getUserByEmail, saveUser, addPickPurchase, getUserPicks, usePickAttempt, getPickAttempts, setSecurityPin, getSecurityPin, verifySecurityPin, hasSecurityPin, setCurrentSessionId, getCurrentSessionId, isValidSession, clearSessionId } = require('./db');
+const { initDatabase, getUser, getAllUsers, getUserByEmail, saveUser, addPickPurchase, getUserPicks, usePickAttempt, getPickAttempts, setSecurityPin, getSecurityPin, verifySecurityPin, hasSecurityPin, setCurrentSessionId, getCurrentSessionId, isValidSession, clearSessionId } = require('./db');
 const bip39 = require('bip39');
 const { derivePath } = require('ed25519-hd-key');
 
@@ -584,7 +584,17 @@ app.get('/leaderboard', (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // â”€â”€â”€ Start â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-app.listen(PORT, () => {
-  console.log(`\nðŸš€ Server running at http://localhost:${PORT}`);
-  console.log(`ðŸ“¡ Solana network: ${process.env.SOLANA_NETWORK || 'mainnet-beta'}\n`);
-});
+async function startServer() {
+  try {
+    await initDatabase();
+  } catch (error) {
+    console.error('Database initialization failed:', error.message);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`\nðŸš€ Server running at http://localhost:${PORT}`);
+    console.log(`ðŸ“¡ Solana network: ${process.env.SOLANA_NETWORK || 'mainnet-beta'}\n`);
+  });
+}
+
+startServer();

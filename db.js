@@ -1,14 +1,48 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const admin = require('firebase-admin');
 require('dotenv').config();
 
 const DB_PATH = path.join(__dirname, 'users.json');
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+const useFirebase = Boolean(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_DATABASE_URL);
+let firebaseDB = null;
 let memoryDB = { users: {} };
 
 // â"€â"€â"€ Encryption/Decryption for Sensitive Fields â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const ENCRYPTION_KEY = Buffer.from(process.env.ENCRYPTION_KEY || '4a7d9f2e1b8c5a3f6e0d4b7a9c2f5e8b1d4a7f0c3e6b9d2a5f8c1e4b7a0d3f69', 'hex');
+
+if (useFirebase) {
+  try {
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY
+      ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      : undefined;
+
+    const serviceAccount = {
+      type: 'service_account',
+      project_id: process.env.FIREBASE_PROJECT_ID,
+      private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+      private_key: privateKey,
+      client_email: process.env.FIREBASE_CLIENT_EMAIL,
+      client_id: process.env.FIREBASE_CLIENT_ID,
+      auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+      token_uri: 'https://oauth2.googleapis.com/token',
+      auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+      client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL || process.env.FIREBASE_CERT_URL
+    };
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: process.env.FIREBASE_DATABASE_URL
+    });
+    firebaseDB = admin.database();
+    loadFirebaseDB().catch(err => console.error('Firebase initial load failed:', err.message));
+    console.log('✅ Firebase initialized');
+  } catch (error) {
+    console.error('Firebase initialization failed:', error.message);
+  }
+}
 
 function encrypt(text) {
   if (!text) return null;
@@ -35,13 +69,16 @@ function decrypt(encryptedData) {
 }
 
 function initDB() {
-  if (isProduction) return; // Skip file operations on Vercel
+  if (isProduction || useFirebase) return; // Skip local file operations on Vercel or when Firebase is configured
   if (!fs.existsSync(DB_PATH)) {
     fs.writeFileSync(DB_PATH, JSON.stringify({ users: {} }, null, 2));
   }
 }
 
 function readDB() {
+  if (useFirebase && firebaseDB) {
+    return memoryDB;
+  }
   if (isProduction) {
     return memoryDB; // Use in-memory store on Vercel
   }
@@ -50,9 +87,41 @@ function readDB() {
   return JSON.parse(data);
 }
 
+async function loadFirebaseDB() {
+  if (!firebaseDB) return;
+  try {
+    const snapshot = await firebaseDB.ref('users').once('value');
+    memoryDB = { users: snapshot.val() || {} };
+    console.log('✅ Firebase data loaded into memory');
+  } catch (error) {
+    console.error('Firebase load error:', error.message);
+  }
+}
+
+async function writeFirebaseDB(data) {
+  if (!firebaseDB) return;
+  try {
+    await firebaseDB.ref('users').set(data.users || {});
+  } catch (error) {
+    console.error('Firebase write error:', error.message);
+  }
+}
+
+async function initDatabase() {
+  if (useFirebase && firebaseDB) {
+    await loadFirebaseDB();
+  }
+}
+
 function writeDB(data) {
+  if (useFirebase && firebaseDB) {
+    memoryDB = data;
+    writeFirebaseDB(data).catch(err => console.error('Async Firebase write failed:', err));
+    return;
+  }
+
   if (isProduction) {
-    memoryDB = data; // Store in memory on Vercel
+    memoryDB = data; // Store in memory on Vercel if not using Firebase
     return;
   }
   fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
@@ -258,6 +327,7 @@ function clearSessionId(googleId) {
 }
 
 module.exports = { 
+  initDatabase,
   getUser, 
   getAllUsers,
   getUserByEmail,
