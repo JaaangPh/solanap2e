@@ -20,40 +20,5 @@
           "lastResetDate": "2026-05-13"
         }
       }
-    },
-    "102766228966495369042": {
-      "googleId": "102766228966495369042",
-      "name": "Jang",
-      "email": "contejaja15@gmail.com",
-      "avatar": "https://lh3.googleusercontent.com/a/ACg8ocKIFnm6WATOKTPLYZjTC7UzFoe_ATgwYNKi2Zxi2jPbBCaP304k=s96-c",
-      "walletPublicKey": "6323d43b1fbdf933694c61818cdedf37:8c01a55f7b05a60993447c5442a79ba0d17d603153e7d14c8f0529926a4d020de09c18b6e408393c18dd12f326a6b87e",
-      "walletPrivateKey": "689349f2078a1d44a4d2aa90c819dab4:1f1aac062b050d7105b6eda13e2481f3e5e38620480d769ea9cad4b84a2fec1fdcea47e84ee47073f2c6691cb9993f88b098502b19ca6796bd731d0b0ab86963d00431b775bde0ddb01b0df1e755b0a138bc69b83200d99647439f3ab796bd7d",
-      "seedPhrase": "wife kiwi jeans frozen runway essay mind machine crop nerve happy kidney",
-      "createdAt": "2026-05-13T01:20:30.381Z",
-      "currentSessionId": "5ixpPxt966YR0yfLmYCYDJdRn63Wf4Yc",
-      "lastLoginTime": "2026-05-13T06:06:33.827Z",
-      "securityPin": "6d1614559047c2b79bd225eb9c017163:070cc5e91d426aeaa714d4b5e8b733ce",
-      "picks": {
-        "rock": {
-          "type": "rock",
-          "purchasedAt": "2026-05-13T02:02:54.191Z",
-          "attemptsToday": 20,
-          "lastResetDate": "2026-05-13"
-        }
-      }
-    },
-    "100054861369912996892": {
-      "googleId": "100054861369912996892",
-      "name": "CONTE, JOHN NIEL T.",
-      "email": "jtconte@student.fatima.edu.ph",
-      "avatar": "https://lh3.googleusercontent.com/a/ACg8ocJ5LeZrCLXbMSPmFYYOjjVq0oVWPGkYeJh1gTyqKSyhow_u7Ks=s96-c",
-      "walletPublicKey": "237d56faa94bc5e943790cf9fe17d69b:bc97e41aa7e1530b77a26b7827087a17aaa789df90b25705f93e4bd10d9e2d00d9875f61cc63a818c889f02617efbdab",
-      "walletPrivateKey": "d737a4e101de344981ea33d3ebbafcf2:0968bdf4efd60cdd859330b4415e8a27c208a0ebfa7bfab129a996d2936c53b53ec25d57d09dae2912a685a6356a0f9d86e61b06d811639ec53114d4587e2a9a6a59d3b02f7f810f73b675a0145865dcd107b0a761d911f1ea1b045812124fbe",
-      "seedPhrase": "motion clog ride pledge grunt slow segment spy rifle session blur clever",
-      "createdAt": "2026-05-13T04:07:22.739Z",
-      "currentSessionId": "cPB4S8z1qyTUVAvgnbZ_EdUVjLq-OOvd",
-      "lastLoginTime": "2026-05-13T06:33:04.719Z",
-      "securityPin": "d7b50f2ab25739027219ed872e5db1b3:23b3b10368462a4a37a15edc039365bf"
     }
-  }
 }
