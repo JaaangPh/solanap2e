@@ -1,10 +1,11 @@
 require('dotenv').config();
 const fs = require('fs');
 const express = require('express');
-const session = require('express-session');
+const cookieSession = require('cookie-session');
 const path = require('path');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const crypto = require('crypto');
 const { Keypair, Connection, LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram, sendAndConfirmTransaction } = require('@solana/web3.js');
 const bs58 = require('bs58');
 const { initDatabase, getUser, getAllUsers, getUserByEmail, saveUser, addPickPurchase, getUserPicks, usePickAttempt, getPickAttempts, setSecurityPin, getSecurityPin, verifySecurityPin, hasSecurityPin, setCurrentSessionId, getCurrentSessionId, isValidSession, clearSessionId } = require('./db');
@@ -15,42 +16,21 @@ const app = express();
 app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
 
-// Use FileStore for local development, memory store for Vercel
-let sessionStore;
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
 
-if (!isProduction) {
-  const FileStore = require('session-file-store')(session);
-  const sessionDir = path.join(__dirname, 'sessions');
-  if (!fs.existsSync(sessionDir)) {
-    fs.mkdirSync(sessionDir, { recursive: true });
-  }
-  sessionStore = new FileStore({
-    path: sessionDir,
-    ttl: 604800,
-    retries: 10,
-    factor: 2,
-    minTimeout: 100,
-    maxTimeout: 300,
-    fallbackSessionFn: function () {
-      return { cookie: {} };
-    },
-    logFn: function () {}
-  });
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  console.warn('⚠️ Google OAuth client credentials are not fully configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.');
 }
 
 // â”€â”€â”€ Session & Passport â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'solana-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  ...(sessionStore && { store: sessionStore }),
-  cookie: { 
-    secure: isProduction,
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  }
+app.use(cookieSession({
+  name: 'solana-session',
+  keys: [process.env.SESSION_SECRET || 'solana-secret-key'],
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  secure: isProduction,
+  proxy: isProduction,
+  httpOnly: true,
+  sameSite: isProduction ? 'none' : 'lax'
 }));
 
 app.use(passport.initialize());
@@ -59,15 +39,17 @@ app.use(express.json());
 
 function getAuthCallbackURL(req) {
   if (process.env.GOOGLE_CALLBACK_URL && process.env.GOOGLE_CALLBACK_URL.trim()) {
-    return process.env.GOOGLE_CALLBACK_URL.replace(/\/+$|\s+$/g, '');
+    return process.env.GOOGLE_CALLBACK_URL.replace(/\/+$/g, '').trim();
   }
 
   const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString().split(',')[0].trim();
+  const forwardedHost = (req.headers['x-forwarded-host'] || req.headers.host || req.get('host') || '').toString().trim();
   const protocol = isProduction
     ? (forwardedProto || 'https')
     : req.protocol;
+  const host = forwardedHost.replace(/\/+$/g, '') || (process.env.VERCEL_URL || '').replace(/\/+$/g, '');
 
-  return `${protocol}://${req.get('host')}/auth/google/callback`;
+  return `${protocol}://${host}/auth/google/callback`;
 }
 
 // â”€â”€â”€ Passport Google OAuth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -121,6 +103,14 @@ passport.deserializeUser((googleId, done) => {
   }
   done(null, user);
 });
+
+app.use((req, res, next) => {
+  if (req.isAuthenticated() && !req.user && req.session?.passport?.user) {
+    req.user = getUser(req.session.passport.user);
+  }
+  next();
+});
+
 // â"€â"€â"€ Session Validation Middleware (enforce single-session per device) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const validateSession = (req, res, next) => {
   if (!req.isAuthenticated()) {
@@ -129,8 +119,9 @@ const validateSession = (req, res, next) => {
   
   // Check if this session ID is still valid (device login enforcement)
   const storedSessionId = getCurrentSessionId(req.user.googleId);
-  if (storedSessionId && storedSessionId !== req.sessionID) {
-    console.log(`🔐 Session mismatch for ${req.user.email}: stored=${storedSessionId}, current=${req.sessionID}`);
+  const currentSessionId = req.session.sessionId || null;
+  if (storedSessionId && storedSessionId !== currentSessionId) {
+    console.log(`🔐 Session mismatch for ${req.user.email}: stored=${storedSessionId}, current=${currentSessionId}`);
     // Logout this old session
     req.logout((err) => {
       if (err) console.error('Logout error:', err);
@@ -173,20 +164,16 @@ app.get('/auth/google/callback', (req, res, next) => {
   })(req, res, next);
 },
   (req, res) => {
+    // Ensure cookie-session has a stable session ID
+    if (!req.session.sessionId) {
+      req.session.sessionId = crypto.randomBytes(16).toString('hex');
+    }
+
     // Store current session ID to enforce single-session per device
-    setCurrentSessionId(req.user.googleId, req.sessionID);
-    console.log(`📱 Session ID stored for ${req.user?.email}: ${req.sessionID}`);
+    setCurrentSessionId(req.user.googleId, req.session.sessionId);
+    console.log(`📱 Session ID stored for ${req.user?.email}: ${req.session.sessionId}`);
     
-    // Force session to be saved before redirecting — without this,
-    // the session may not persist and /dashboard will see the user as unauthenticated.
-    req.session.save((err) => {
-      if (err) {
-        console.error('❌ Session save error:', err);
-        return res.redirect('/?error=session_error');
-      }
-      console.log(`✅ Session saved for ${req.user?.email}, redirecting to /dashboard`);
-      res.redirect('/dashboard');
-    });
+    res.redirect('/dashboard');
   }
 );
 
@@ -533,7 +520,8 @@ app.get('/dashboard', (req, res) => {
 
 app.get('/arena', validateSession, (req, res) => {
   const storedSessionId = getCurrentSessionId(req.user.googleId);
-  if (storedSessionId && storedSessionId !== req.sessionID) {
+  const currentSessionId = req.session?.sessionId || null;
+  if (storedSessionId && storedSessionId !== currentSessionId) {
     console.log(`🔐 Arena access denied: session mismatch for ${req.user.email}`);
     return res.redirect('/?error=session_expired');
   }
