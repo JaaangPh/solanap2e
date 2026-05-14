@@ -12,6 +12,7 @@ const bip39 = require('bip39');
 const { derivePath } = require('ed25519-hd-key');
 
 const app = express();
+app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
 
 // Use FileStore for local development, memory store for Vercel
@@ -60,7 +61,12 @@ function getAuthCallbackURL(req) {
   if (process.env.GOOGLE_CALLBACK_URL && process.env.GOOGLE_CALLBACK_URL.trim()) {
     return process.env.GOOGLE_CALLBACK_URL.replace(/\/+$|\s+$/g, '');
   }
-  const protocol = isProduction ? 'https' : req.protocol;
+
+  const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString().split(',')[0].trim();
+  const protocol = isProduction
+    ? (forwardedProto || 'https')
+    : req.protocol;
+
   return `${protocol}://${req.get('host')}/auth/google/callback`;
 }
 
